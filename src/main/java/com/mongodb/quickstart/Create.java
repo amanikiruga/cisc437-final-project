@@ -4,11 +4,11 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.InsertManyOptions;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -18,37 +18,108 @@ public class Create {
 
     public static void main(String[] args) {
         try (MongoClient mongoClient = MongoClients.create(System.getProperty("mongodb.uri"))) {
+            MongoDatabase database = mongoClient.getDatabase("demo-store");
+            MongoCollection<Document> productCollection = database.getCollection("product");
+            MongoCollection<Document> inventoryCollection = database.getCollection("inventory");
 
-            MongoDatabase sampleTrainingDB = mongoClient.getDatabase("sample_training");
-            MongoCollection<Document> gradesCollection = sampleTrainingDB.getCollection("grades");
+            // Insert one product
+            Document singleProduct = generateRandomProductDocument();
+            insertOneProduct(productCollection, singleProduct);
 
-            insertOneDocument(gradesCollection);
-            insertManyDocuments(gradesCollection);
+            // Insert multiple products
+            List<Document> productList = generateRandomProductDocuments(5);
+            insertManyProducts(productCollection, productList);
+
+            // Insert one inventory item
+            ObjectId productId = singleProduct.getObjectId("_id");
+            insertOneInventoryItem(inventoryCollection, productId);
+
+            // Insert multiple inventory items
+            insertMultipleInventoryItems(inventoryCollection, productId, 3);
         }
     }
 
-    private static void insertOneDocument(MongoCollection<Document> gradesCollection) {
-        gradesCollection.insertOne(generateNewGrade(10000d, 1d));
-        System.out.println("One grade inserted for studentId 10000.");
+    private static Document generateRandomProductDocument() {
+        ObjectId productId = new ObjectId();
+        String productName = "Product " + rand.nextInt(100);
+        String productDesc = "Description for " + productName;
+        ObjectId statusId = new ObjectId();
+        ObjectId crtdId = new ObjectId();
+        Date crtdDate = new Date();
+        ObjectId updtId = new ObjectId();
+        Date updtDate = new Date();
+        List<Document> inventories = generateInventoryDocuments(rand.nextInt(5) + 1, productId);
+
+        return new Document("_id", productId)
+                .append("product_name", productName)
+                .append("product_desc", productDesc)
+                .append("status_id", statusId)
+                .append("crtd_id", crtdId)
+                .append("crtd_date", crtdDate)
+                .append("updt_id", updtId)
+                .append("updt_date", updtDate)
+                .append("inventories", inventories);
     }
 
-    private static void insertManyDocuments(MongoCollection<Document> gradesCollection) {
-        List<Document> grades = new ArrayList<>();
-        for (double classId = 1d; classId <= 10d; classId++) {
-            grades.add(generateNewGrade(10001d, classId));
+    private static List<Document> generateRandomProductDocuments(int count) {
+        List<Document> products = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            products.add(generateRandomProductDocument());
         }
-
-        gradesCollection.insertMany(grades, new InsertManyOptions().ordered(false));
-        System.out.println("Ten grades inserted for studentId 10001.");
+        return products;
     }
 
-    private static Document generateNewGrade(double studentId, double classId) {
-        List<Document> scores = List.of(new Document("type", "exam").append("score", rand.nextDouble() * 100),
-                                        new Document("type", "quiz").append("score", rand.nextDouble() * 100),
-                                        new Document("type", "homework").append("score", rand.nextDouble() * 100),
-                                        new Document("type", "homework").append("score", rand.nextDouble() * 100));
-        return new Document("_id", new ObjectId()).append("student_id", studentId)
-                                                  .append("class_id", classId)
-                                                  .append("scores", scores);
+    private static void insertOneProduct(MongoCollection<Document> collection, Document product) {
+        collection.insertOne(product);
+        System.out.println("Inserted one product with ID: " + product.get("_id"));
+    }
+
+    private static void insertManyProducts(MongoCollection<Document> collection, List<Document> products) {
+        collection.insertMany(products);
+        System.out.println("Inserted multiple products");
+    }
+
+    private static void insertOneInventoryItem(MongoCollection<Document> collection, ObjectId productId) {
+        Document inventory = new Document("_id", new ObjectId())
+                .append("product_id", productId)
+                .append("serial_number", rand.nextInt(1000))
+                .append("crtd_id", new ObjectId())
+                .append("crtd_date", new Date())
+                .append("updt_id", new ObjectId())
+                .append("updt_date", new Date());
+        collection.insertOne(inventory);
+        System.out.println("Inserted one inventory item for Product ID: " + productId);
+    }
+
+    private static void insertMultipleInventoryItems(MongoCollection<Document> collection, ObjectId productId,
+            int count) {
+        List<Document> inventories = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Document inventory = new Document("_id", new ObjectId())
+                    .append("product_id", productId)
+                    .append("serial_number", rand.nextInt(1000))
+                    .append("crtd_id", new ObjectId())
+                    .append("crtd_date", new Date())
+                    .append("updt_id", new ObjectId())
+                    .append("updt_date", new Date());
+            inventories.add(inventory);
+        }
+        collection.insertMany(inventories);
+        System.out.println("Inserted " + count + " inventory items for Product ID: " + productId);
+    }
+
+    private static List<Document> generateInventoryDocuments(int count, ObjectId productId) {
+        List<Document> inventories = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Document inventory = new Document("_id", new ObjectId())
+                    .append("product_id", productId)
+                    .append("serial_number", 1000 + rand.nextInt(9000))
+                    .append("crtd_id", new ObjectId())
+                    .append("crtd_date", new Date())
+                    .append("updt_id", new ObjectId())
+                    .append("updt_date", new Date());
+            inventories.add(inventory);
+        }
+        return inventories;
     }
 }
