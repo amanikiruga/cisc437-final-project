@@ -20,7 +20,6 @@ public class Create {
         try (MongoClient mongoClient = MongoClients.create(System.getProperty("mongodb.uri"))) {
             MongoDatabase database = mongoClient.getDatabase("demo-store");
             MongoCollection<Document> productCollection = database.getCollection("product");
-            MongoCollection<Document> inventoryCollection = database.getCollection("inventory");
 
             // Insert one product
             Document singleProduct = generateRandomProductDocument();
@@ -30,12 +29,6 @@ public class Create {
             List<Document> productList = generateRandomProductDocuments(5);
             insertManyProducts(productCollection, productList);
 
-            // Insert one inventory item
-            ObjectId productId = singleProduct.getObjectId("_id");
-            insertOneInventoryItem(inventoryCollection, productId);
-
-            // Insert multiple inventory items
-            insertMultipleInventoryItems(inventoryCollection, productId, 3);
         }
     }
 
@@ -48,7 +41,7 @@ public class Create {
         Date crtdDate = new Date();
         ObjectId updtId = new ObjectId();
         Date updtDate = new Date();
-        List<Document> inventories = generateInventoryDocuments(rand.nextInt(5) + 1, productId);
+        List<Document> inventories = new ArrayList<>();
 
         return new Document("_id", productId)
                 .append("product_name", productName)
@@ -77,35 +70,6 @@ public class Create {
     private static void insertManyProducts(MongoCollection<Document> collection, List<Document> products) {
         collection.insertMany(products);
         System.out.println("Inserted multiple products");
-    }
-
-    private static void insertOneInventoryItem(MongoCollection<Document> collection, ObjectId productId) {
-        Document inventory = new Document("_id", new ObjectId())
-                .append("product_id", productId)
-                .append("serial_number", rand.nextInt(1000))
-                .append("crtd_id", new ObjectId())
-                .append("crtd_date", new Date())
-                .append("updt_id", new ObjectId())
-                .append("updt_date", new Date());
-        collection.insertOne(inventory);
-        System.out.println("Inserted one inventory item for Product ID: " + productId);
-    }
-
-    private static void insertMultipleInventoryItems(MongoCollection<Document> collection, ObjectId productId,
-            int count) {
-        List<Document> inventories = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            Document inventory = new Document("_id", new ObjectId())
-                    .append("product_id", productId)
-                    .append("serial_number", rand.nextInt(1000))
-                    .append("crtd_id", new ObjectId())
-                    .append("crtd_date", new Date())
-                    .append("updt_id", new ObjectId())
-                    .append("updt_date", new Date());
-            inventories.add(inventory);
-        }
-        collection.insertMany(inventories);
-        System.out.println("Inserted " + count + " inventory items for Product ID: " + productId);
     }
 
     private static List<Document> generateInventoryDocuments(int count, ObjectId productId) {

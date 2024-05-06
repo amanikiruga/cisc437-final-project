@@ -8,6 +8,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
 public class Delete {
@@ -57,7 +58,8 @@ public class Delete {
     private static void findOneAndDeleteDocument(MongoCollection<Document> collection, ObjectId id) {
         Document deletedDocument = collection.findOneAndDelete(Filters.eq("_id", id));
         if (deletedDocument != null) {
-            System.out.println("Deleted document: " + deletedDocument.toJson());
+            System.out.println(
+                    "Deleted document: " + deletedDocument.toJson(JsonWriterSettings.builder().indent(true).build()));
         } else {
             System.out.println("No document found with the specified ID.");
         }

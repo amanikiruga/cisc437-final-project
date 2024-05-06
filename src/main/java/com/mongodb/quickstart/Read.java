@@ -2,6 +2,7 @@ package com.mongodb.quickstart;
 
 import com.mongodb.client.*;
 import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,8 @@ public class Read {
             // Find documents where product name starts with "P"
             findProductsWithNameStartingWithP(collection);
 
-            // Find documents where product description contains "phone"
-            findProductsWithDescriptionContainingPhone(collection);
+            // Find documents where product description contains "product"
+            findProductsWithDescriptionContainingString(collection, "product");
 
             // Find documents where inventory serial number is greater than 100
             findProductsWithInventorySerialNumberGreaterThan100(collection);
@@ -39,7 +40,7 @@ public class Read {
         System.out.println("All Products:");
         try (MongoCursor<Document> cursor = collection.find().iterator()) {
             while (cursor.hasNext()) {
-                System.out.println(cursor.next().toJson());
+                System.out.println(cursor.next().toJson(JsonWriterSettings.builder().indent(true).build()));
             }
         }
     }
@@ -48,25 +49,26 @@ public class Read {
         System.out.println("\nProducts with name starting with 'P':");
         try (MongoCursor<Document> cursor = collection.find(regex("product_name", "^P")).iterator()) {
             while (cursor.hasNext()) {
-                System.out.println(cursor.next().toJson());
+                System.out.println(cursor.next().toJson(JsonWriterSettings.builder().indent(true).build()));
             }
         }
     }
 
-    private static void findProductsWithDescriptionContainingPhone(MongoCollection<Document> collection) {
-        System.out.println("\nProducts with description containing 'phone':");
-        try (MongoCursor<Document> cursor = collection.find(regex("product_desc", "phone", "i")).iterator()) {
+    private static void findProductsWithDescriptionContainingString(MongoCollection<Document> collection,
+            String searchString) {
+        System.out.println("\nProducts with description containing" + searchString + ":");
+        try (MongoCursor<Document> cursor = collection.find(regex("product_desc", searchString, "i")).iterator()) {
             while (cursor.hasNext()) {
-                System.out.println(cursor.next().toJson());
+                System.out.println(cursor.next().toJson(JsonWriterSettings.builder().indent(true).build()));
             }
         }
     }
 
     private static void findProductsWithInventorySerialNumberGreaterThan100(MongoCollection<Document> collection) {
         System.out.println("\nProducts with inventory serial number greater than 100:");
-        try (MongoCursor<Document> cursor = collection.find(gt("inventory.inventory_serial_nbr", 100)).iterator()) {
+        try (MongoCursor<Document> cursor = collection.find(gt("inventories.serial_number", 100)).iterator()) {
             while (cursor.hasNext()) {
-                System.out.println(cursor.next().toJson());
+                System.out.println(cursor.next().toJson(JsonWriterSettings.builder().indent(true).build()));
             }
         }
     }
@@ -78,7 +80,7 @@ public class Read {
                 .projection(fields(include("product_name", "product_crtd_dt"), excludeId()))
                 .iterator()) {
             while (cursor.hasNext()) {
-                System.out.println(cursor.next().toJson());
+                System.out.println(cursor.next().toJson(JsonWriterSettings.builder().indent(true).build()));
             }
         }
     }
